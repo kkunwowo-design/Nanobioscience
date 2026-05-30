@@ -1,11 +1,37 @@
 import streamlit as st
+import os
+import base64
 
 # 1. 페이지 설정 및 와이드 모드 필수 활성화
 st.set_page_config(page_title="나노바이오의약학실험실", layout="wide")
 
+# 이미지 저장을 위한 디렉토리 생성
+UPLOAD_DIR = "saved_images"
+if not os.path.exists(UPLOAD_DIR):
+    os.makedirs(UPLOAD_DIR)
+
+# --- 📁 파일 저장 및 로드용 헬퍼 함수 ---
+def save_uploaded_file(uploaded_file, filename):
+    """업로드된 파일을 로컬 디렉토리에 저장"""
+    filepath = os.path.join(UPLOAD_DIR, filename)
+    with open(filepath, "wb") as f:
+        f.write(uploaded_file.getbuffer())
+    return filepath
+
+def get_image_base64(filepath):
+    """로컬 파일을 base64로 인코딩"""
+    with open(filepath, "rb") as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
+# ----------------------------------------
+
 # 2. 사진 및 글 데이터 수정을 위한 스트림릿 세션 상태(Session State) 초기화
+main_saved_path = os.path.join(UPLOAD_DIR, "uploaded_main_bg.png")
 if "main_bg" not in st.session_state:
-    st.session_state.main_bg = "https://images.unsplash.com/photo-1579152249282-9f5d271b316a?q=80&w=1600"
+    if os.path.exists(main_saved_path):
+        st.session_state.main_bg = main_saved_path
+    else:
+        st.session_state.main_bg = "https://images.unsplash.com/photo-1579152249282-9f5d271b316a?q=80&w=1600"
 
 for i in range(1, 4):
     if f"news_title_{i}" not in st.session_state:
@@ -18,12 +44,16 @@ for i in range(1, 4):
         elif i == 2: st.session_state.news_text_2 = "차세대 바이오 의약학 기술 국제 심포지엄이 다가오는 전반기 본교에서 개최됩니다."
         else: st.session_state.news_text_3 = "본 연구팀의 나노입자 기반 의약학 치료 기전 논문이 국제 학술지에 게재 승인되었습니다."
         
+    news_saved_path = os.path.join(UPLOAD_DIR, f"uploaded_news_{i}.png")
     if f"news_img_{i}" not in st.session_state:
-        if i == 1: st.session_state.news_img_1 = "https://images.unsplash.com/photo-1532187863486-abf9d39d6618?q=80&w=600"
-        elif i == 2: st.session_state.news_img_2 = "https://images.unsplash.com/photo-1582719508461-905c673771fd?q=80&w=600"
-        else: st.session_state.news_img_3 = "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=600"
+        if os.path.exists(news_saved_path):
+            st.session_state[f"news_img_{i}"] = news_saved_path
+        else:
+            if i == 1: st.session_state.news_img_1 = "https://images.unsplash.com/photo-1532187863486-abf9d39d6618?q=80&w=600"
+            elif i == 2: st.session_state.news_img_2 = "https://images.unsplash.com/photo-1582719508461-905c673771fd?q=80&w=600"
+            else: st.session_state.news_img_3 = "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=600"
 
-# 3. CSS 오버라이드: 카드 내 이미지 높이를 240px -> 320px로 확장
+# 3. CSS 오버라이드
 st.markdown("""
     <style>
     [data-testid="stAppViewContainer"] > section:nth-child(2) {
@@ -71,7 +101,6 @@ st.markdown("""
         width: 100%;
     }
     
-    /* 🛠️ [살짝 키움] 최근 소식 이미지 영역 높이를 320px로 시원하게 확장 */
     .custom-card img, .uploaded-img-wrapper img {
         width: 100% !important;
         height: 320px !important; 
@@ -120,7 +149,9 @@ with header_right:
                 st.markdown("🖼️ **메인 배너 이미지 변경**")
                 main_file = st.file_uploader("메인 배너 사진 업로드", type=["jpg", "png", "jpeg"], key="main_upload")
                 if main_file:
-                    st.session_state.main_bg = main_file
+                    saved_path = save_uploaded_file(main_file, "uploaded_main_bg.png")
+                    st.session_state.main_bg = saved_path
+                    st.success("메인 배너가 서버에 영구 저장되었습니다! 페이지를 새로고침 하세요.")
                 
                 st.markdown("---")
                 st.markdown("📢 **최근 소식 콘텐츠 변경**")
@@ -134,7 +165,9 @@ with header_right:
                         
                         news_file = st.file_uploader(f"카드 {i} 사진 업로드", type=["jpg", "png", "jpeg"], key=f"news_upload_{i}")
                         if news_file:
-                            st.session_state[f"news_img_{i}"] = news_file
+                            saved_news_path = save_uploaded_file(news_file, f"uploaded_news_{i}.png")
+                            st.session_state[f"news_img_{i}"] = saved_news_path
+                            st.success(f"카드 {i} 사진이 서버에 영구 저장되었습니다!")
             elif password != "":
                 st.error("비밀번호가 일치하지 않습니다.")
         st.markdown("</div>", unsafe_allow_html=True)
@@ -142,13 +175,11 @@ with header_right:
 st.markdown("<hr style='margin-top:-10px; margin-bottom:35px; border:1px solid #E2E8F0;'>", unsafe_allow_html=True)
 
 
-# 5. 메인 히어로 배너 (전체 밸런스에 맞춰 높이를 380px -> 420px로 확장)
-if isinstance(st.session_state.main_bg, str):
+# 5. 메인 히어로 배너 배포
+if isinstance(st.session_state.main_bg, str) and st.session_state.main_bg.startswith("http"):
     bg_style = f"background-image: url('{st.session_state.main_bg}');"
 else:
-    import base64
-    bytes_data = st.session_state.main_bg.getvalue()
-    b64_img = base64.b64encode(bytes_data).decode()
+    b64_img = get_image_base64(st.session_state.main_bg)
     bg_style = f"background-image: url('data:image/jpeg;base64,{b64_img}');"
 
 st.markdown(f"""
@@ -156,7 +187,7 @@ st.markdown(f"""
     {bg_style}
     background-size: cover;
     background-position: center;
-    height: 420px; /* 🛠️ 메인 배너도 살짝 확장 */
+    height: 420px;
     border-radius: 16px;
     box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
     margin-bottom: 50px;
@@ -171,12 +202,10 @@ cols = [news_col1, news_col2, news_col3]
 
 for i in range(1, 4):
     with cols[i-1]:
-        if isinstance(st.session_state[f"news_img_{i}"], str):
+        if isinstance(st.session_state[f"news_img_{i}"], str) and st.session_state[f"news_img_{i}"].startswith("http"):
             img_html = f'<img src="{st.session_state[f"news_img_{i}"]}">'
         else:
-            import base64
-            card_bytes = st.session_state[f"news_img_{i}"].getvalue()
-            card_b64 = base64.b64encode(card_bytes).decode()
+            card_b64 = get_image_base64(st.session_state[f"news_img_{i}"])
             img_html = f'<div class="uploaded-img-wrapper"><img src="data:image/jpeg;base64,{card_b64}"></div>'
 
         st.markdown(f"""
