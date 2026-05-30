@@ -88,9 +88,7 @@ st.markdown("""
         padding: 0 !important;
         color: #1E3A8A !important;
         font-weight: 700 !important;
-        font-size: 16px !important;
     }
-    
     .custom-card {
         background-color: white;
         border-radius: 14px;
@@ -100,18 +98,15 @@ st.markdown("""
         margin-bottom: 20px;
         width: 100%;
     }
-    
     .custom-card img, .uploaded-img-wrapper img {
         width: 100% !important;
         height: 320px !important; 
         object-fit: cover !important;
         display: block !important;
     }
-    
     .card-body {
         padding: 24px;
     }
-    
     div[data-testid="stPopover"] img {
         max-width: 150px !important;
         height: auto !important;
@@ -131,49 +126,43 @@ with header_left:
 
 with header_right:
     menu_1, menu_2, menu_3, menu_4, menu_admin = st.columns([1, 1, 1.2, 1, 1.5])
-    with menu_1: st.markdown("<p style='font-weight:700; color:#475569; padding-top:22px; text-align:right;'>소개</p>", unsafe_allow_html=True)
-    with menu_2: st.markdown("<p style='font-weight:700; color:#475569; padding-top:22px; text-align:right;'>커뮤니티</p>", unsafe_allow_html=True)
-    with menu_3: st.markdown("<p style='font-weight:700; color:#475569; padding-top:22px; text-align:right;'>연구논문</p>", unsafe_allow_html=True)
-    with menu_4: st.markdown("<p style='font-weight:700; color:#475569; padding-top:22px; text-align:right;'>소식</p>", unsafe_allow_html=True)
+    with menu_1: st.write("소개")
+    with menu_2: st.write("커뮤니티")
+    with menu_3: 
+        st.link_button("연구논문", url="https://scholar.google.com/citations?hl=ko&user=hBXqv1EAAAAJ&view_op=list_works&sortby=pubdate")
+    with menu_4: st.write("소식")
     
     with menu_admin:
-        st.markdown("<div style='padding-top:18px; text-align:right;'>", unsafe_allow_html=True)
         with st.popover("관리자 ⚙️"):
             st.markdown("### 🔐 관리자 인증")
             password = st.text_input("비밀번호를 입력하세요", type="password")
             
             if password == "020110":
-                st.success("인증 성공! 콘텐츠 수정 모드가 활성화되었습니다.")
+                st.success("인증 성공!")
                 st.markdown("---")
-                
                 st.markdown("🖼️ **메인 배너 이미지 변경**")
                 main_file = st.file_uploader("메인 배너 사진 업로드", type=["jpg", "png", "jpeg"], key="main_upload")
                 if main_file:
                     saved_path = save_uploaded_file(main_file, "uploaded_main_bg.png")
                     st.session_state.main_bg = saved_path
-                    st.success("메인 배너가 서버에 영구 저장되었습니다! 페이지를 새로고침 하세요.")
+                    st.success("메인 배너가 서버에 영구 저장되었습니다!")
                 
                 st.markdown("---")
                 st.markdown("📢 **최근 소식 콘텐츠 변경**")
-                
                 for i in range(1, 4):
                     with st.expander(f"소식 카드 {i}번 수정"):
                         new_title = st.text_input(f"카드 {i} 제목", value=st.session_state[f"news_title_{i}"])
                         new_text = st.text_area(f"카드 {i} 본문", value=st.session_state[f"news_text_{i}"])
                         st.session_state[f"news_title_{i}"] = new_title
                         st.session_state[f"news_text_{i}"] = new_text
-                        
                         news_file = st.file_uploader(f"카드 {i} 사진 업로드", type=["jpg", "png", "jpeg"], key=f"news_upload_{i}")
                         if news_file:
                             saved_news_path = save_uploaded_file(news_file, f"uploaded_news_{i}.png")
                             st.session_state[f"news_img_{i}"] = saved_news_path
-                            st.success(f"카드 {i} 사진이 서버에 영구 저장되었습니다!")
             elif password != "":
-                st.error("비밀번호가 일치하지 않습니다.")
-        st.markdown("</div>", unsafe_allow_html=True)
+                st.error("비밀번호 불일치")
 
 st.markdown("<hr style='margin-top:-10px; margin-bottom:35px; border:1px solid #E2E8F0;'>", unsafe_allow_html=True)
-
 
 # 5. 메인 히어로 배너 배포
 if isinstance(st.session_state.main_bg, str) and st.session_state.main_bg.startswith("http"):
@@ -183,20 +172,11 @@ else:
     bg_style = f"background-image: url('data:image/jpeg;base64,{b64_img}');"
 
 st.markdown(f"""
-<div style="
-    {bg_style}
-    background-size: cover;
-    background-position: center;
-    height: 420px;
-    border-radius: 16px;
-    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
-    margin-bottom: 50px;
-"></div>
+<div style="{bg_style} background-size: cover; background-position: center; height: 420px; border-radius: 16px; box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08); margin-bottom: 50px;"></div>
 """, unsafe_allow_html=True)
 
-
 # 6. 최근 소식 구역
-st.markdown("<h3 style='color:#0F172A; font-weight:800; margin-bottom:30px; font-size:28px; letter-spacing:-0.5px;'>📢 최근 소식</h3>", unsafe_allow_html=True)
+st.markdown("### 📢 최근 소식")
 news_col1, news_col2, news_col3 = st.columns(3, gap="large")
 cols = [news_col1, news_col2, news_col3]
 
@@ -207,71 +187,26 @@ for i in range(1, 4):
         else:
             card_b64 = get_image_base64(st.session_state[f"news_img_{i}"])
             img_html = f'<div class="uploaded-img-wrapper"><img src="data:image/jpeg;base64,{card_b64}"></div>'
-
         st.markdown(f"""
         <div class="custom-card">
             {img_html}
             <div class="card-body">
-                <span style="color:#94A3B8; font-size:13px; font-weight:600;">📅 2026.05.29</span>
-                <h4 style="margin: 10px 0 12px 0; color:#1E293B; font-weight:800; font-size:20px; letter-spacing:-0.5px;">{st.session_state[f"news_title_{i}"]}</h4>
-                <p style="color:#475569; font-size:15px; line-height:1.6; margin:0;">{st.session_state[f"news_text_{i}"]}</p>
+                <h4 style="margin: 10px 0 12px 0;">{st.session_state[f"news_title_{i}"]}</h4>
+                <p>{st.session_state[f"news_text_{i}"]}</p>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
-
 # 7. 문의하기 구역
-st.markdown("<h3 style='color:#0F172A; font-weight:800; margin-bottom:30px; font-size:28px; letter-spacing:-0.5px;'>📞 문의하기</h3>", unsafe_allow_html=True)
+st.markdown("### 📞 문의하기")
 contact_col1, contact_col2, contact_col3 = st.columns(3, gap="large")
-
-with contact_col1:
-    st.markdown("""
-    <div style="background-color:white; padding:35px 20px; border-radius:14px; border:1px solid #E2E8F0; text-align:center; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
-        <div style="font-size:32px; margin-bottom:10px;">📞</div>
-        <h5 style="margin:0 0 8px 0; color:#64748B; font-weight:700; font-size:15px;">전화 번호</h5>
-        <p style="color:#1E3A8A; font-weight:800; margin:0; font-size:20px;">010-8474-0933</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-with contact_col2:
-    st.markdown("""
-    <div style="background-color:white; padding:35px 20px; border-radius:14px; border:1px solid #E2E8F0; text-align:center; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
-        <div style="font-size:32px; margin-bottom:10px;">✉️</div>
-        <h5 style="margin:0 0 8px 0; color:#64748B; font-weight:700; font-size:15px;">이메일 주소</h5>
-        <p style="color:#1E3A8A; font-weight:800; margin:0; font-size:19px;">kunwowo@gmail.com</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-with contact_col3:
-    st.markdown("""
-    <div style="background-color:white; padding:35px 20px; border-radius:14px; border:1px solid #E2E8F0; text-align:center; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
-        <div style="font-size:32px; margin-bottom:10px;">📍</div>
-        <h5 style="margin:0 0 8px 0; color:#64748B; font-weight:700; font-size:15px;">연구실 위치</h5>
-        <p style="color:#334155; font-size:16px; margin:0; font-weight:700;">충청북도 충주시 충원대로 268</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-st.markdown("<br><br><br><br><br>", unsafe_allow_html=True)
+with contact_col1: st.info(f"📞 전화: 010-8474-0933")
+with contact_col2: st.info(f"✉️ 이메일: kunwowo@gmail.com")
+with contact_col3: st.info(f"📍 위치: 충청북도 충주시 충원대로 268")
 
 # 8. 하단 푸터 영역
 st.markdown("""
-<div style="background-color: #0F172A; color: #94A3B8; padding: 60px 50px; margin-left: -5%; margin-right: -5%; padding-left: 5%; padding-right: 5%;">
-    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 50px;">
-        <div>
-            <h5 style="color: white; font-weight: 800; margin-bottom: 15px; font-size:17px;">대학원</h5>
-            <p style="font-size: 14px; line-height: 1.7; color:#94A3B8; margin:0;">미래를 선도하는 글로벌 교육기관<br>나노바이오의약학융합공학 전공</p>
-        </div>
-        <div>
-            <h5 style="color: white; font-weight: 800; margin-bottom: 15px; font-size:17px;">입학안내</h5>
-            <p style="font-size: 14px; line-height: 1.7; color:#94A3B8; margin:0;">전형일정 / 지원자격 / FAQ</p>
-        </div>
-        <div>
-            <h5 style="color: white; font-weight: 800; margin-bottom: 15px; font-size:17px;">연구지원</h5>
-            <p style="font-size: 14px; line-height: 1.7; color:#94A3B8; margin:0;">공동기기센터 / 학술연구비 / 시설안내</p>
-        </div>
-    </div>
-    <div style="margin-top: 50px; padding-top: 25px; border-top: 1px solid #334155; text-align: center; font-size: 13px; color:#475569;">
-        © 2026 Graduate School. All rights reserved.
-    </div>
+<div style="background-color: #0F172A; color: #94A3B8; padding: 40px; margin-top:50px;">
+    <p>© 2026 나노바이오의약학실험실. All rights reserved.</p>
 </div>
 """, unsafe_allow_html=True)
